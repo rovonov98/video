@@ -1,4 +1,4 @@
-import { FC, useRef, memo, useEffect, useCallback } from "react";
+import { FC, useRef, memo, useEffect, useCallback, MouseEvent, TouchEvent } from "react";
 
 import { selectedEventSelector } from "@redux/slices";
 import { EventComponentProps, Event } from "types";
@@ -22,14 +22,8 @@ const VideoPlayer: FC<EventComponentProps> = ({ events }) => {
     const width = video.current?.videoWidth;
     const height = video.current?.videoHeight;
 
-    const pixelRatio = window.devicePixelRatio;
-
-    const ctx = canvas.current?.getContext("2d");
-
     canvas.current!.width = width || 0;
     canvas.current!.height = height || 0;
-
-    ctx?.scale(pixelRatio, pixelRatio);
   }, []);
 
   const onTimeUpdate = useCallback(() => {
@@ -68,6 +62,14 @@ const VideoPlayer: FC<EventComponentProps> = ({ events }) => {
     }
   }, [events, video, canvas]);
 
+  const onClick = useCallback(
+    (e: MouseEvent<HTMLVideoElement> | TouchEvent<HTMLVideoElement>) => {
+      e.preventDefault();
+      video.current?.paused ? video.current?.play() : video.current?.pause();
+    },
+    [video]
+  );
+
   useEffect(() => {
     selectedEvent && video.current && (video.current.currentTime = selectedEvent.timestamp / 1000);
   }, [selectedEvent]);
@@ -76,7 +78,14 @@ const VideoPlayer: FC<EventComponentProps> = ({ events }) => {
     <>
       <div>
         <div className="video-player-container">
-          <video className="video" onTimeUpdate={onTimeUpdate} onLoadedMetadata={onLoadMetaData} ref={video} controls>
+          <video
+            className="video"
+            onTimeUpdate={onTimeUpdate}
+            onLoadedMetadata={onLoadMetaData}
+            onClick={onClick}
+            onTouchStart={onClick}
+            ref={video}
+            controls>
             <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
           </video>
           <canvas className="canvas" ref={canvas} />
