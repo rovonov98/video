@@ -1,8 +1,10 @@
-import { FC, useRef, memo, useEffect, useCallback, MouseEvent, TouchEvent } from "react";
+import { FC, useRef, memo, useCallback, SyntheticEvent, useState } from "react";
 
 import { selectedEventSelector } from "@redux/slices";
-import { EventComponentProps, Event } from "types";
+import { Event, EventComponentProps } from "types";
 import { useTypedSelector } from "@redux";
+import VideoOverlay from "./VideoOverlay";
+import Video from "./Video";
 
 type InitialActiveEventsValue = {
   [key: string | number]: Event;
@@ -13,27 +15,32 @@ const initialActiveEventsValue: InitialActiveEventsValue = {};
 const VideoPlayer: FC<EventComponentProps> = ({ events }) => {
   const selectedEvent = useTypedSelector(selectedEventSelector);
 
-  const video = useRef<HTMLVideoElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const [video, setVideo] = useState<HTMLVideoElement | null>(null);
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+
+  const progress = useRef<HTMLProgressElement>(null);
 
   const activeEvents = useRef(initialActiveEventsValue);
 
-  const onLoadMetaData = useCallback(() => {
-    const width = video.current?.videoWidth;
-    const height = video.current?.videoHeight;
+  const onLoadMetaData = useCallback(
+    (e: SyntheticEvent<HTMLVideoElement>) => {
+      const width = e?.currentTarget?.videoWidth;
+      const height = e?.currentTarget?.videoHeight;
 
-    canvas.current!.width = width || 0;
-    canvas.current!.height = height || 0;
-  }, []);
+      canvas!.width = width || 0;
+      canvas!.height = height || 0;
+    },
+    [canvas]
+  );
 
   const onTimeUpdate = useCallback(() => {
-    if (video.current && canvas.current) {
-      const currentTime = video.current.currentTime * 1000;
+    if (video && canvas) {
+      const currentTime = video.currentTime * 1000;
       const active = activeEvents.current;
 
-      const ctx = canvas.current.getContext("2d");
+      const ctx = canvas.getContext("2d");
 
-      ctx?.clearRect(0, 0, canvas.current.width, canvas.current.height);
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
       ctx!.strokeStyle = "green";
       ctx!.lineWidth = 4;
 
@@ -60,35 +67,30 @@ const VideoPlayer: FC<EventComponentProps> = ({ events }) => {
         ctx?.stroke();
       }
     }
-  }, [events, video, canvas]);
+  }, [events, video, canvas, progress]);
 
-  const onClick = useCallback(
-    (e: MouseEvent<HTMLVideoElement> | TouchEvent<HTMLVideoElement>) => {
-      e.preventDefault();
-      video.current?.paused ? video.current?.play() : video.current?.pause();
-    },
-    [video]
-  );
+  const onVideoInit = useCallback((vid: HTMLVideoElement) => {
+    setVideo(vid);
+  }, []);
 
-  useEffect(() => {
-    selectedEvent && video.current && (video.current.currentTime = selectedEvent.timestamp / 1000);
-  }, [selectedEvent]);
+  const onCanvasInit = useCallback((canv: HTMLCanvasElement) => {
+    setCanvas(canv);
+  }, []);
 
   return (
     <>
       <div>
         <div className="video-player-container">
-          <video
-            className="video"
-            onTimeUpdate={onTimeUpdate}
+          <Video
             onLoadedMetadata={onLoadMetaData}
-            onClick={onClick}
-            onTouchStart={onClick}
-            ref={video}
-            controls>
-            <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
-          </video>
-          <canvas className="canvas" ref={canvas} />
+            onTimeUpdate={onTimeUpdate}
+            onInit={onVideoInit}
+            selectedTime={selectedEvent ? selectedEvent.timestamp / 1000 : 0}
+          />
+          <div className="video-controls">
+            <progress className="progress" value={0} max={100} ref={progress} />
+          </div>
+          <VideoOverlay onInit={onCanvasInit} />
         </div>
       </div>
     </>

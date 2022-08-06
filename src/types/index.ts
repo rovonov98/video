@@ -1,3 +1,5 @@
+import { HTMLProps } from "react";
+
 export type Event = {
   id: number;
   timestamp: number;
@@ -14,4 +16,13 @@ export type Events = Array<Event>;
 
 export interface EventComponentProps {
   events: Events | [];
+}
+
+export interface VideoPlayerProps extends HTMLProps<HTMLVideoElement> {
+  selectedTime?: number;
+  onInit: Function;
+}
+
+export interface VideoOverlayProps extends HTMLProps<HTMLCanvasElement> {
+  onInit: Function;
 }
