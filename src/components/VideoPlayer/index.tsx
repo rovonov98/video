@@ -41,11 +41,11 @@ const VideoPlayer: FC<EventComponentProps> = ({ events }) => {
         const event = events[i];
         const timeStart = event.timestamp;
 
-        if (timeStart > currentTime) break;
+        const isTooEarly = timeStart > currentTime;
 
         const timeEnd = timeStart + event.duration;
 
-        if (timeEnd > currentTime) {
+        if (timeEnd > currentTime && !isTooEarly) {
           active[i] = event;
         } else {
           if (active.hasOwnProperty(i)) delete active[i];
