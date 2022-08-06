@@ -18,7 +18,7 @@ const Events: FC<EventComponentProps> = ({ events }) => {
   return (
     <div className="event-list">
       {events?.map(event => (
-        <div key={event.id} className="event-list-item" onClick={() => clickHandler(event)}>
+        <div key={event.id} className="event-list-item" onClick={() => clickHandler({ ...event })}>
           {formatDate(event.timestamp)}
         </div>
       ))}
